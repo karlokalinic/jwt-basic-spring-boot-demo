@@ -1,0 +1,5 @@
+CREATE TABLE demo_users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(64) NOT NULL,
+  role VARCHAR(32) NOT NULL
+);

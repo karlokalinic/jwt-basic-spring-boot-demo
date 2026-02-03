@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Serijalizacija &amp; deserijalizacija demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #05060b;
+      --panel: rgba(11, 16, 28, 0.9);
+      --panel-border: rgba(120, 140, 255, 0.25);
+      --accent: #66f3ff;
+      --accent-2: #ff9bff;
+      --accent-3: #8bffb8;
+      --muted: #98a4c8;
+      --danger: #ff6f7d;
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at top left, rgba(102, 243, 255, 0.15), transparent 50%), #05060b;
+      color: #e6efff;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 14px 30px rgba(8, 12, 24, 0.4);
+    }
+
+    input, textarea, button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(120, 140, 255, 0.25);
+      background: rgba(4, 7, 18, 0.65);
+      color: #e6efff;
+      padding: 10px 12px;
+      box-sizing: border-box;
+    }
+
+    textarea { min-height: 120px; font-family: ui-monospace, Consolas, monospace; }
+    button { cursor: pointer; font-weight: 700; margin-top: 8px; }
+    button.danger { border-color: rgba(255, 111, 125, 0.45); color: #ffd2d7; }
+    button.success { border-color: rgba(139, 255, 184, 0.45); color: #c6ffe1; }
+
+    .muted { color: var(--muted); font-size: 14px; }
+    pre { background: rgba(4, 8, 16, 0.9); border: 1px solid rgba(120, 140, 255, 0.25); border-radius: 12px; padding: 12px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>☠️ Serijalizacija &amp; deserijalizacija — demo</h1>
+    <p class="muted">
+      Flow: serijaliziraj DemoUser → testiraj /vuln (ignorira potpis) → testiraj /safe (provjerava potpis + whitelist).
+      Token se automatski povlači iz localStorage-a (jwt_demo_token).
+    </p>
+
+    <div class="card">
+      <label>JWT token:</label>
+      <input id="token" placeholder="eyJhbGciOi..." />
+      <button onclick="loadToken()">Učitaj token iz localStorage</button>
+      <p class="muted">Ako nema tokena, loginaj se na glavnoj stranici.</p>
+    </div>
+
+    <div class="grid" style="margin-top:16px;">
+      <div class="card">
+        <h3>Serijalizacija DemoUser</h3>
+        <input id="serUser" placeholder="username" value="student" />
+        <input id="serRole" placeholder="role" value="ROLE_USER" />
+        <input id="serPassword" placeholder="password (transient)" value="tajna" />
+        <input id="serCreated" placeholder="createdAt (optional)" value="" />
+        <button class="success" onclick="serializeUser()">Serialize &amp; Sign</button>
+        <p class="muted" id="serNote">password je transient → neće u payload.</p>
+      </div>
+
+      <div class="card">
+        <h3>Payload + HMAC</h3>
+        <textarea id="payload" placeholder="payloadBase64"></textarea>
+        <textarea id="sig" placeholder="sigBase64"></textarea>
+        <button onclick="loadSamples()">Učitaj sample payload-e</button>
+      </div>
+
+      <div class="card">
+        <h3>Deserijalizacija</h3>
+        <button class="danger" onclick="callApi('vuln')">POST /api/deser/vuln</button>
+        <button class="success" onclick="callApi('safe')">POST /api/deser/safe</button>
+        <pre id="out"></pre>
+      </div>
+    </div>
+  </div>
+
+<script>
+function loadToken() {
+  const token = localStorage.getItem('jwt_demo_token') || '';
+  document.getElementById('token').value = token;
+}
+
+async function serializeUser() {
+  const token = document.getElementById('token').value.trim();
+  const payload = {
+    username: document.getElementById('serUser').value,
+    role: document.getElementById('serRole').value,
+    password: document.getElementById('serPassword').value,
+    createdAt: document.getElementById('serCreated').value
+  };
+
+  const res = await fetch('/api/deser/serialize', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const text = await res.text();
+  const data = safeJsonParse(text);
+  if (!data) {
+    document.getElementById('out').innerText = text;
+    return;
+  }
+
+  document.getElementById('payload').value = data.payloadBase64 || '';
+  document.getElementById('sig').value = data.sigBase64 || '';
+  document.getElementById('serNote').innerText = data.note || '';
+  document.getElementById('out').innerText = JSON.stringify(data, null, 2);
+}
+
+async function loadSamples() {
+  const token = document.getElementById('token').value.trim();
+  const res = await fetch('/api/deser/samples', {
+    headers: { 'Authorization': 'Bearer ' + token },
+    credentials: 'omit'
+  });
+  const data = await res.json();
+
+  const good = data.find(x => x.name.startsWith('GOOD'));
+  if (good) {
+    document.getElementById('payload').value = good.payloadBase64;
+    document.getElementById('sig').value = good.sigBase64;
+  }
+
+  document.getElementById('out').innerText = JSON.stringify(data, null, 2);
+}
+
+async function callApi(which) {
+  const token = document.getElementById('token').value.trim();
+  const payload = document.getElementById('payload').value.trim();
+  const sig = document.getElementById('sig').value.trim();
+
+  const res = await fetch('/api/deser/' + which, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    credentials: 'omit',
+    body: JSON.stringify({ payloadBase64: payload, sigBase64: sig })
+  });
+
+  const text = await res.text();
+  document.getElementById('out').innerText = text;
+}
+
+function safeJsonParse(s) {
+  try { return JSON.parse(s); } catch { return null; }
+}
+
+function clearCookies() {
+  document.cookie.split(';').forEach(cookie => {
+    const name = cookie.split('=')[0].trim();
+    if (!name) return;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  });
+}
+
+clearCookies();
+</script>
+</body>
+</html>
