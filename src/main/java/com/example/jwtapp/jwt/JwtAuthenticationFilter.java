@@ -1,23 +1,24 @@
 package com.example.jwtapp.jwt;
 
-import io.jsonwebtoken.JwtException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.List;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Reads Authorization: Bearer <token>, validates it, and sets SecurityContext.
@@ -58,18 +59,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 if (jwtService.isTokenValid(token, userDetails)) {
-                    List<SimpleGrantedAuthority> authorities = jwtService.extractRoles(token).stream()
+                    List<String> roles = jwtService.extractRoles(token);
+                    
+                    // KRITIČNO: Ako nema rola u tokenu, NE postavljaj auth!
+                    // Inače dobijemo 403 s "praznom dušom" umjesto 401
+                    if (roles == null || roles.isEmpty()) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+                    
+                    List<SimpleGrantedAuthority> authorities = roles.stream()
                             .map(String::trim)
                             .filter(role -> !role.isBlank())
                             .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
                             .map(SimpleGrantedAuthority::new)
                             .toList();
+                    
+                    // Još jedna provjera - ako su sve role bile prazni stringovi
+                    if (authorities.isEmpty()) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
 
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
                                     null,
-                                    authorities.isEmpty() ? userDetails.getAuthorities() : authorities
+                                    authorities
                             );
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

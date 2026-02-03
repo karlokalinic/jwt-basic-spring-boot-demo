@@ -66,12 +66,35 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Izvlači role iz tokena. Robustan na različite tipove claim-a.
+     * - Ako je List<String> → vraća listu
+     * - Ako je String → vraća listu s jednim elementom
+     * - Ako je null ili drugi tip → vraća praznu listu
+     */
     public List<String> extractRoles(String token) {
-        Object roles = extractAllClaims(token).get("rol");
-        if (roles instanceof List<?> list) {
-            return list.stream().map(String::valueOf).toList();
+        Claims claims = extractAllClaims(token);
+        Object raw = claims.get("rol");
+        
+        if (raw == null) {
+            return List.of();
         }
+        
+        // Ako je već String (pojedinačna rola)
+        if (raw instanceof String s) {
+            return s.isBlank() ? List.of() : List.of(s);
+        }
+        
+        // Ako je Collection (očekivano)
+        if (raw instanceof java.util.Collection<?> c) {
+            return c.stream()
+                    .filter(item -> item != null)
+                    .map(String::valueOf)
+                    .filter(s -> !s.isBlank())
+                    .toList();
+        }
+        
+        // Nepoznat tip - vrati prazno (sigurnije od bacanja exceptiona)
         return List.of();
     }
 
