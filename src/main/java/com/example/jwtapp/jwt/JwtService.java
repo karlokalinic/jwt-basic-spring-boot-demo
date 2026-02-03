@@ -38,9 +38,11 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails user) {
+        // Izvuci role BEZ "ROLE_" prefiksa - filter će ga dodati nazad
         List<String> roles = user.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5) : role)
                 .collect(Collectors.toList());
 
         Instant now = Instant.now();
@@ -53,7 +55,7 @@ public class JwtService {
                 .setSubject(user.getUsername())
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(exp))
-                .claim("rol", roles) // matches the PDF example claim name
+                .claim("rol", roles) // ["USER", "ADMIN"] - bez ROLE_ prefiksa
                 .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
