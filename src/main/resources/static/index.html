@@ -659,9 +659,9 @@
 </head>
 <body>
   <div class="page">
-    <!-- ═══════════════════════════════════════════════════════════
+    <!-- 
          NASLOVNICA
-         ═══════════════════════════════════════════════════════════ -->
+          -->
     <header class="masthead">
       <h1>Zapisi o Sigurnosti</h1>
       <p class="subtitle">Praktična enciklopedija za one koji žele razumjeti kako (ne) zaštititi aplikaciju</p>
@@ -678,9 +678,9 @@
       </ul>
     </nav>
 
-    <!-- ═══════════════════════════════════════════════════════════
+    <!-- 
          POGLAVLJE 1: JWT
-         ═══════════════════════════════════════════════════════════ -->
+          -->
     <section class="chapter" id="poglavlje-1">
       <div class="chapter-header">
         <span class="chapter-num">Poglavlje Prvo</span>
@@ -773,9 +773,9 @@
 
     <div class="ornament">❧ ❧ ❧</div>
 
-    <!-- ═══════════════════════════════════════════════════════════
+    <!-- 
          POGLAVLJE 2: SQL INJECTION
-         ═══════════════════════════════════════════════════════════ -->
+          -->
     <section class="chapter" id="poglavlje-2">
       <div class="chapter-header">
         <span class="chapter-num">Poglavlje Drugo</span>
@@ -870,9 +870,9 @@ stmt.setString(1, input);</code></pre>
 
     <div class="ornament">✦ ✦ ✦</div>
 
-    <!-- ═══════════════════════════════════════════════════════════
+    <!-- 
          POGLAVLJE 3: SERIALIZATION
-         ═══════════════════════════════════════════════════════════ -->
+          -->
     <section class="chapter" id="poglavlje-3">
       <div class="chapter-header">
         <span class="chapter-num">Poglavlje Treće</span>
@@ -980,9 +980,9 @@ stmt.setString(1, input);</code></pre>
 
     <div class="ornament">◆ ◆ ◆</div>
 
-    <!-- ═══════════════════════════════════════════════════════════
+    <!-- 
          POGLAVLJE 4: TESTOVI
-         ═══════════════════════════════════════════════════════════ -->
+          -->
     <section class="chapter" id="poglavlje-4">
       <div class="chapter-header">
         <span class="chapter-num">Poglavlje Četvrto</span>
@@ -1033,9 +1033,6 @@ stmt.setString(1, input);</code></pre>
       <div class="result-log" id="testLog"></div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         FOOTER
-         ═══════════════════════════════════════════════════════════ -->
     <footer class="footnote">
       <p><sup>†</sup> Ovaj projekt je izrađen u edukativne svrhe. Svi primjeri ranjivog koda su namjerno nesigurni kako bi demonstrirali rizike.</p>
       <p class="handwritten" style="margin-top: 20px;">— pisano s ☕ i ljubavlju prema sigurnom kodu —</p>
@@ -1047,18 +1044,14 @@ stmt.setString(1, input);</code></pre>
     </footer>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       JAVASCRIPT
-       ═══════════════════════════════════════════════════════════ -->
+
   <script>
     const STORAGE_KEY = "jwt_demo_token";
     let token = localStorage.getItem(STORAGE_KEY) || "";
     let cachedTestCatalog = [];
     let badGadgetPayload = null, badGadgetSig = null;
 
-    // ──────────────────────────────────────────────────────────────
-    // Utility
-    // ──────────────────────────────────────────────────────────────
+  
     const $ = id => document.getElementById(id);
     const setOut = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
     const safeJSON = s => { try { return JSON.parse(s); } catch { return null; } };
@@ -1117,9 +1110,9 @@ stmt.setString(1, input);</code></pre>
       return true;
     }
 
-    // ──────────────────────────────────────────────────────────────
+    
     // API
-    // ──────────────────────────────────────────────────────────────
+    
     async function api(method, url, body, auth, logId = "out") {
       const headers = {};
       if (body) headers["Content-Type"] = "application/json";
@@ -1147,9 +1140,7 @@ stmt.setString(1, input);</code></pre>
       }
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Auth
-    // ──────────────────────────────────────────────────────────────
+   
     async function ping() {
       await api("GET", "/api/public/ping", null, false);
     }
@@ -1157,7 +1148,7 @@ stmt.setString(1, input);</code></pre>
     async function login() {
       const u = $("user").value, p = $("pass").value;
       
-      // VAŽNO: Briši stari token PRIJE login-a da izbjegnemo konflikte
+      //  Briši stari token PRIJE login-a da izbjegnemo konflikte
       token = "";
       localStorage.removeItem(STORAGE_KEY);
       
@@ -1201,9 +1192,9 @@ stmt.setString(1, input);</code></pre>
       await api("GET", "/api/admin/secret", null, true);
     }
 
-    // ──────────────────────────────────────────────────────────────
+    
     // SQL Injection
-    // ──────────────────────────────────────────────────────────────
+    
     const INJECTION = "' OR '1'='1";
 
     function fillInjection() {
@@ -1270,9 +1261,9 @@ stmt.setString(1, input);</code></pre>
       tbody.innerHTML = html;
     }
 
-    // ──────────────────────────────────────────────────────────────
+    
     // Serialization
-    // ──────────────────────────────────────────────────────────────
+    
     async function serializeDemoUser() {
       if (!requireToken("Serijalizacija")) return;
       
@@ -1352,9 +1343,9 @@ stmt.setString(1, input);</code></pre>
       }
     }
 
-    // ──────────────────────────────────────────────────────────────
+    
     // Tests
-    // ──────────────────────────────────────────────────────────────
+    
     async function loadTestCatalog() {
       if (!requireToken("Test Katalog")) return;
       
@@ -1445,9 +1436,9 @@ stmt.setString(1, input);</code></pre>
       }).join("");
     }
 
-    // ──────────────────────────────────────────────────────────────
+    
     // Init
-    // ──────────────────────────────────────────────────────────────
+    
     document.addEventListener('DOMContentLoaded', () => {
       updateTokenUI();
     });
