@@ -72,6 +72,7 @@ public class JwtService {
      * - Ako je String → vraća listu s jednim elementom
      * - Ako je null ili drugi tip → vraća praznu listu
      */
+    
     public List<String> extractRoles(String token) {
         Claims claims = extractAllClaims(token);
         Object raw = claims.get("rol");

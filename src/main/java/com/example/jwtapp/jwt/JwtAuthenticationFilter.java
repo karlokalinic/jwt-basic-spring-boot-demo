@@ -61,8 +61,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtService.isTokenValid(token, userDetails)) {
                     List<String> roles = jwtService.extractRoles(token);
                     
-                    // KRITIČNO: Ako nema rola u tokenu, NE postavljaj auth!
-                    // Inače dobijemo 403 s "praznom dušom" umjesto 401
                     if (roles == null || roles.isEmpty()) {
                         filterChain.doFilter(request, response);
                         return;
